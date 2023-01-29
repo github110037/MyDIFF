@@ -1,0 +1,36 @@
+#
+# Automatically generated file; DO NOT EDIT.
+# HIT DIFFTEST CONFIG
+#
+CONFIG_TRACE_ON=y
+
+#
+# Build Options
+#
+CONFIG_CC_GCC=y
+# CONFIG_CC_GPP is not set
+# CONFIG_CC_CLANG is not set
+CONFIG_CC="gcc"
+# CONFIG_CC_O0 is not set
+# CONFIG_CC_O1 is not set
+CONFIG_CC_O2=y
+# CONFIG_CC_O3 is not set
+CONFIG_CC_OPT="-O2"
+# CONFIG_CC_LTO is not set
+# CONFIG_CC_DEBUG is not set
+# end of Build Options
+
+#
+# AXI Options
+#
+CONFIG_AXI_DWID=32
+CONFIG_AXI_AWID=32
+CONFIG_AXI_IDWID=4
+# end of AXI Options
+
+#
+# Perference Test
+#
+CONFIG_PERF_START=3
+CONFIG_PERF_END=3
+# end of Perference Test
