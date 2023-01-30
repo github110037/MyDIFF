@@ -1,4 +1,5 @@
 #include "axi.hpp"
+#include "common.hh"
 axi4_slave::axi4_slave(int delay):delay(delay) {}
 bool axi4_slave::beat(axi4_ref &pin) {/*{{{*/
     if (!read_channel(pin)) return false;
@@ -59,9 +60,6 @@ void axi4_slave::print_error(){/*{{{*/
     }
 }/*}}}*/
 
-axi_resp axi4_slave::do_read (uint64_t start_addr, uint64_t size, uint8_t* buffer){return RESP_OKEY;}
-axi_resp axi4_slave::do_write(uint64_t start_addr, uint64_t size, const uint8_t* buffer){return RESP_OKEY;}
-
 bool axi4_slave::read_check() {/*{{{*/
     r_ecode = NO_ERROR;
     if (r_burst_type == BURST_RESERVED) r_ecode = NO_BURST_TYPE;
@@ -70,7 +68,7 @@ bool axi4_slave::read_check() {/*{{{*/
         if (r_nr_trans != 2 && r_nr_trans != 4 && r_nr_trans != 8 && r_nr_trans != 16) 
             r_ecode = NO_WARP_LEN;
     }
-    uint64_t rem_addr = 4096 - (r_start_addr % 4096);
+    word_t rem_addr = 4096 - (r_start_addr % 4096);
     if (r_tot_len > rem_addr) r_ecode = BURST_UP_4K;
     if (r_each_len > D_bytes) r_ecode = SIZE_UP_WID;
     return r_ecode==NO_ERROR;
@@ -94,7 +92,7 @@ void axi4_slave::read_beat(axi4_ref &pin) {/*{{{*/
             pin.rdata = 0;
         }
         else if (r_burst_type == BURST_FIXED) {
-            pin.rresp = do_read(static_cast<uint64_t>(r_start_addr), static_cast<uint64_t>(r_tot_len), &r_data[r_start_addr % 4096]);
+            pin.rresp = paddrTop.do_read(r_start_addr, r_tot_len, &r_data[r_start_addr % 4096]);
             pin.rdata = *(AUTO_T(CONFIG_AXI_DWID)*)(&r_data[(r_start_addr % 4096) - (r_start_addr % D_bytes)]);
         }
         else { // INCR, WRAP
@@ -120,18 +118,18 @@ bool axi4_slave::read_init(axi4_ref &pin) {/*{{{*/
     if (!r_early_err){
         // clear unused bits.
         if (r_start_addr % D_bytes) {
-            uint64_t clear_addr = r_start_addr % 4096;
+            word_t clear_addr = r_start_addr % 4096;
             clear_addr -= clear_addr % D_bytes;
             memset(&r_data[clear_addr],0x00,D_bytes);
         }
         if ((r_start_addr + r_tot_len) % D_bytes) {
-            uint64_t clear_addr = (r_start_addr + r_tot_len) % 4096;
+            word_t clear_addr = (r_start_addr + r_tot_len) % 4096;
             clear_addr -= (clear_addr % D_bytes);
             memset(&r_data[clear_addr],0x00,D_bytes);
         }
         // For BURST_FIXED, we call do_read every read burst
         if (r_burst_type != BURST_FIXED) 
-            r_resp = do_read(static_cast<uint64_t>(r_start_addr), static_cast<uint64_t>(r_tot_len), &r_data[r_start_addr % 4096] );
+            r_resp = do_read(static_cast<word_t>(r_start_addr), static_cast<word_t>(r_tot_len), &r_data[r_start_addr % 4096] );
     }
     return !r_early_err;
 }/*}}}*/
@@ -180,7 +178,7 @@ bool axi4_slave::write_check() {/*{{{*/
         if (w_nr_trans != 2 || w_nr_trans != 4 || w_nr_trans != 8 || w_nr_trans != 16)
             r_ecode = NO_WARP_LEN;
     }
-    uint64_t rem_addr = 4096 - (w_start_addr % 4096);
+    word_t rem_addr = 4096 - (w_start_addr % 4096);
     if (w_tot_len > rem_addr) r_ecode = BURST_UP_4K;
     if (w_each_len > D_bytes) r_ecode = SIZE_UP_WID;
     return w_ecode==NO_ERROR;
@@ -221,14 +219,14 @@ bool axi4_slave::write_beat(axi4_ref &pin) {/*{{{*/
             w_early_err |= !pin.wlast;
         }
         if (!w_early_err){
-            uint64_t addr_base = w_current_addr;
+            word_t addr_base = w_current_addr;
             if (w_burst_type != BURST_FIXED) {
                 w_current_addr += w_each_len - (addr_base % w_each_len);
                 if (w_current_addr == (w_start_addr + w_each_len * w_nr_trans)) w_cur_trans =  w_start_addr; // warp support
             }
-            uint64_t in_data_pos = addr_base % D_bytes;
+            word_t in_data_pos = addr_base % D_bytes;
             addr_base -= addr_base % D_bytes;
-            uint64_t rem_data_pos = w_each_len - (in_data_pos % w_each_len); // unaligned support
+            word_t rem_data_pos = w_each_len - (in_data_pos % w_each_len); // unaligned support
                                                                              // split discontinuous wstrb bits to small requests
             std::vector<std::pair<int,int> > range = strb_to_range(pin.wstrb,in_data_pos,in_data_pos+rem_data_pos);
             for (std::pair<int,int> sub_range : range) {

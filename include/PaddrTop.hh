@@ -1,4 +1,6 @@
-#include "PaddrInterface.hpp"/*{{{*/
+#ifndef __PADDR_TOP__
+#define __PADDR_TOP__
+#include "PaddrInterface.hpp"
 #include <vector>
 #include <fstream>
 #include <iostream>
@@ -102,7 +104,7 @@ class Pmem : public PaddrInterface  {/*{{{*/
                     *(uint16_t*)(mem+addr) = data ;
                     break;
                 case 4: 
-                    if (likely(info.wstrb==0xff)) *(uint32_t*)(mem+addr) = data ;
+                    if (likely(info.wstrb==0xf)) *(uint32_t*)(mem+addr) = data;
                     else {
                         if (BITS(info.wstrb,0,0)) *(uint8_t *)(mem+addr+0) = BITS(data,7,0); 
                         if (BITS(info.wstrb,1,1)) *(uint8_t *)(mem+addr+1) = BITS(data,15,8);
@@ -348,3 +350,4 @@ class PaddrConfreg: public PaddrInterface {
             return num;
         }
 };/*}}}*/
+#endif

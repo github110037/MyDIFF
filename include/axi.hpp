@@ -3,7 +3,7 @@
 #include "generated/autoconf.h"
 #include <verilated.h>
 #include "macro.hpp"
-#include "PaddrInterface.hpp"
+#include "PaddrTop.hh"
 #include <map>
 
 // AXI_BUNDLE{{{
@@ -100,12 +100,11 @@ class axi4_slave{/*{{{*/
         bool beat(axi4_ref &pin);
         void reset();
         void print_error();
-    protected:
-        virtual axi_resp do_read (uint64_t start_addr, uint64_t size, uint8_t* buffer);
-        virtual axi_resp do_write(uint64_t start_addr, uint64_t size, const uint8_t* buffer);
+        PaddrTop paddrTop();
     private:
         unsigned int D_bytes = CONFIG_AXI_DWID / 8;
         int delay;
+
         enum ecode_t {/*{{{*/
             NO_ERROR = 0,
             NO_BURST_TYPE,
@@ -120,8 +119,8 @@ class axi4_slave{/*{{{*/
         bool read_last = false; // wait rready and free
         bool read_wait = false; // ar ready, but waiting the last read to ready
         int  read_delay = 0; // delay
-        uint64_t        r_start_addr;   // lower bound of transaction address
-        uint64_t        r_current_addr; // current burst address in r_data buffer (physical address % 4096)
+        word_t        r_start_addr;   // lower bound of transaction address
+        word_t        r_current_addr; // current burst address in r_data buffer (physical address % 4096)
         AUTO_T(CONFIG_AXI_IDWID) arid;
         axi_burst_type  r_burst_type;
         unsigned int    r_each_len;
@@ -142,8 +141,8 @@ class axi4_slave{/*{{{*/
         bool write_busy = false;
         bool b_busy     = false;
         int  write_delay = 0;
-        uint64_t        w_start_addr;
-        uint64_t        w_current_addr;
+        word_t        w_start_addr;
+        word_t        w_current_addr;
         AUTO_T(CONFIG_AXI_IDWID) awid;
         axi_burst_type  w_burst_type;
         unsigned int    w_each_len;
@@ -162,32 +161,4 @@ class axi4_slave{/*{{{*/
         void b_beat(axi4_ref &pin);
         bool write_channel(axi4_ref &pin);
 };/*}}}*/
-
-class axi4_xbar: public axi4_slave{/*{{{*/
-    public:
-        axi4_xbar(int delay = 0);
-        bool add_dev(uint64_t start_addr, uint64_t length, PaddrInterface *dev);
-    private:
-        std::map < std::pair<uint64_t,uint64_t>, PaddrInterface* > devices;
-    protected:
-        axi_resp do_read(uint64_t start_addr, uint64_t size, unsigned char* buffer);
-        axi_resp do_write(uint64_t start_addr, uint64_t size, const unsigned char* buffer);
-};/*}}}*/
-
-class axi4_mem : public axi4_slave{/*{{{*/
-    public:
-        axi4_mem(size_t size_bytes);
-        axi4_mem(size_t size_bytes, const uint8_t *init_binary, size_t init_binary_len);
-        ~axi4_mem();
-        bool read(off_t start_addr, size_t size, uint8_t* buffer);
-        bool write(off_t start_addr, size_t size, const uint8_t* buffer);
-        void load_binary(const char *init_file, uint64_t start_addr = 0);
-    protected:
-        axi_resp do_read(uint64_t start_addr, uint64_t size, uint8_t* buffer);
-        axi_resp do_write(uint64_t start_addr, uint64_t size, const uint8_t* buffer);
-    private:
-        uint8_t *mem;
-        size_t mem_size;
-};/*}}}*/
-
 #endif // !__AXI_HPP__
