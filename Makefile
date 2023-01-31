@@ -12,14 +12,14 @@ VXX_WNO = -Wno-caseincomplete \
 		  -Wno-pinmissing \
 		  -Wno-implicit \
 		  -Wno-timescalemod
-CFLAGS = -I$(CVXX_HOME)/include -g
+CFLAGS = -I../include -g
 NPROC = $(shell nproc)
 VXXFLAG += --trace --cc -D__SIM_IP__ --Mdir $(VXX_MDIR) $(VXX_WNO) -LDFLAGS "-lpthread" --relative-includes $(VINCLUDE) -CFLAGS "$(CFLAGS)" -j $(NPROC)
 
 VXXBIN = V$(TOPNAME)
 VSRC_TOP = $(VSRC_DIR)/$(TOPNAME).v
 VSRC_ALL = $(shell find $(VSRC_DIR) -type f -name "*.v")
-CSRC = $(shell find $(CSRC_DIR) -type f -name "*.cpp")
+CSRC = $(shell find $(CSRC_DIR) -type f -name "*.cc")
 
 .PHONY: clean head sim wave var
 
@@ -31,8 +31,7 @@ head: $(VSRC_ALL)
 	verilator $(VXXFLAG) $(VSRC_TOP) 
 
 $(VXXBIN): $(VSRC_ALL) $(CSRC)
-	verilator $(VXXFLAG) --exe $(VSRC_TOP) $(CSRC)
-	make -C $(VXX_MDIR) -f V$(TOPNAME).mk OPT_FAST="-O0" 
+	verilator $(VXXFLAG) --exe $(VSRC_TOP) $(CSRC) --build
  
 sim: $(VXXBIN)
 	$(VXX_MDIR)/V$(TOPNAME)
