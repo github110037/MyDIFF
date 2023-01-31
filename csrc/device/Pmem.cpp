@@ -2,13 +2,11 @@
 #include <fstream>
 #include <iostream>
 Pmem::Pmem(word_t size_bytes) {
-    Assert(IS_2_POW(size_bytes),"Pmem size is not2 power %x",size_bytes);
+    Assert(IS_2_POW(size_bytes),"Pmem size is not 2 power: %x",size_bytes);
     mem = new unsigned char[size_bytes];
     mem_size = size_bytes;
 }
-Pmem::Pmem(const AddrIntv &_range){
-    Pmem(_range.mask+1);
-}
+Pmem::Pmem(const AddrIntv &_range):Pmem(_range.mask+1) {}
 Pmem::Pmem(size_t size_bytes, const unsigned char *init_binary, size_t init_binary_len): Pmem(size_bytes) {
     // Initalize memory 
     assert(init_binary_len <= size_bytes);
@@ -69,15 +67,15 @@ bool Pmem::do_write(word_t addr, size_wstrb info, const word_t data){
     }
     return res;
 }
-void Pmem::load_binary(uint64_t addr, const char *init_file) {
+void Pmem::load_binary(uint64_t offset, const char *init_file) {
     std::ifstream file(init_file,std::ios::in | std::ios::binary | std::ios::ate);
     size_t file_size = file.tellg();
     file.seekg(std::ios_base::beg);
-    if (addr >= mem_size || file_size > mem_size - addr) {
+    if (offset >= mem_size || file_size+offset > mem_size) {
         std::cerr << "memory size is not big enough for init file." << std::endl;
         file_size = mem_size;
     }
-    file.read((char*)mem+addr,file_size);
+    file.read((char*)mem+offset,file_size);
 }
 void Pmem::save_binary(const char *filename) {
     std::ofstream file(filename, std::ios::out | std::ios::binary);

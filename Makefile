@@ -19,7 +19,7 @@ VXXFLAG += --trace --cc -D__SIM_IP__ --Mdir $(VXX_MDIR) $(VXX_WNO) -LDFLAGS "-lp
 VXXBIN = V$(TOPNAME)
 VSRC_TOP = $(VSRC_DIR)/$(TOPNAME).v
 VSRC_ALL = $(shell find $(VSRC_DIR) -type f -name "*.v")
-CSRC = $(shell find $(CSRC_DIR) -type f -name "*.cc")
+CSRC = $(shell find $(CSRC_DIR) -type f -name "*.cpp")
 
 .PHONY: clean head sim wave var
 

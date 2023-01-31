@@ -16,8 +16,8 @@ class AddrIntv {
     AddrIntv(word_t _start, word_t _len): start(_start), mask(_len - 1){
         Assert((start & mask) == 0,"AddrIntv parameter error: start:%x\tlen:\t%x\n",_start,_len);
     };
-    AddrIntv(word_t _start, uint8_t mask_bits){
-        AddrIntv(_start,(word_t)BITMASK(mask_bits));
+    AddrIntv(word_t _start, uint8_t mask_bits):start (_start), mask(BITMASK(mask_bits)){
+        Assert((start & mask) == 0,"AddrIntv parameter error: start:%x\tmask_len:\t%x\n",_start,mask_bits);
     }
     word_t end(){
         return start + mask;

@@ -6,6 +6,9 @@ bool axi_paddr::calculate_output(){
 }
 void axi_paddr::reset(){
     r_status = r_idel;
+    idel_wait_read();
+    w_status = w_idel;
+    idel_wait_write();
 }
 #define __my_axi_out_ref__(width,name,masterIn) IFONE(masterIn, pins.name = s_##name;)
 void axi_paddr::update_output(){
@@ -13,7 +16,7 @@ void axi_paddr::update_output(){
 }
 bool axi_paddr::check_axi_req(uint8_t num_bytes, burst_t burst_type, word_t start_addr, uint8_t burst_len){/*{{{*/
     bool res = true;
-    __ASSERT_SIM__(num_bytes<=(CONFIG_AXI_DWID>>8), \
+    __ASSERT_SIM__(num_bytes<=(CONFIG_AXI_DWID>>3), \
             "32 AXI read bytes number not support %d",num_bytes);
     __ASSERT_SIM__(burst_type!=BURST_RESERVED, \
             "Arburst type is RESERVED");
@@ -47,7 +50,7 @@ bool axi_paddr::accept_read_req(){/*{{{*/
 
     if (r_burst_type==BURST_WRAP){
         r_wrap_off_mask = ((r_burst_count)<<pins.arsize)-1;
-        r_wrap_bound = start_addr & r_wrap_off_mask;
+        r_wrap_bound = start_addr & ~r_wrap_off_mask;
     }
     r_cur_id = pins.arid;
     r_cur_addr = start_addr;
@@ -66,13 +69,15 @@ bool axi_paddr::do_once_read(){/*{{{*/
     s_rresp = res ? RESP_OKEY : RESP_DECERR;
     r_burst_count--;
 
-    switch (w_burst_type) {
+    switch (r_burst_type) {
         case BURST_FIXED:
             break;
         case BURST_INCR:
             r_cur_addr += r_cur_info.size;
+            break;
         case BURST_WRAP:
             r_cur_addr = ((r_cur_addr + r_cur_info.size) & r_wrap_off_mask) | r_wrap_bound;
+            break;
         default:
             assert(0);
     }
@@ -101,14 +106,14 @@ bool axi_paddr::read_eval(){/*{{{*/
                 r_status = r_wait_last;
                 res &= do_once_read();
             }
+            break;
         case r_wait_last:
             if (pins.rready && pins.rlast) {
                 r_status = r_idel;
                 idel_wait_read();
             }
             else res &= do_once_read();
-        default:
-            assert(0);
+            break;
     }
     return res;
 }/*}}}*/
@@ -125,7 +130,7 @@ bool axi_paddr::accept_write_req(){/*{{{*/
 
     if (w_burst_type==BURST_WRAP){
         w_wrap_off_mask = ((w_burst_count)<<pins.awsize)-1;
-        w_wrap_bound = start_addr & w_wrap_off_mask;
+        w_wrap_bound = start_addr & ~w_wrap_off_mask;
     }
 
     w_cur_NO = 0;
@@ -138,11 +143,11 @@ bool axi_paddr::accept_write_req(){/*{{{*/
 };/*}}}*/
 bool axi_paddr::accept_write_data(){/*{{{*/
     bool res = true;
-    __ASSERT_SIM__(pins.wid==w_cur_id, "Write data %x wid != awid",pins.wdata);
+    __ASSERT_SIM__(pins.wid==w_cur_id, "Write data %x wid(%x) != awid(%x)",pins.wdata, pins.wid, w_cur_id);
     w_cur_data[w_cur_NO] = pins.wdata;
     w_cur_info[w_cur_NO].wstrb = pins.wstrb;
     w_cur_NO++;
-    if (w_cur_NO == w_burst_count-1) {
+    if (w_cur_NO == w_burst_count) {
         __ASSERT_SIM__(pins.wlast==1, "Write data %x wlast != 1 when the last wdata arrive",pins.wdata);
         s_wready = 0;
         w_left_time = rand_delay();
@@ -191,7 +196,7 @@ bool axi_paddr::write_eval(){/*{{{*/
         case w_idel:
             if (pins.awvalid){
                 w_status = w_req_ok;
-                res &= accept_read_req();
+                res &= accept_write_req();
             }
             break;
         case w_req_ok:
