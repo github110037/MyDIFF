@@ -25,6 +25,8 @@ VXX_WNO = -Wno-caseincomplete \
 		  -Wno-implicit \
 		  -Wno-timescalemod
 CFLAGS = -I$(DIFF_HOME)/include -g
+CFLAGS += -DNSCSCC_HOME=\\\"$(NSCSCC_HOME)\\\"
+CFLAGS += -DDIFF_HOME=\\\"$(DIFF_HOME)\\\"
 NPROC = $(shell nproc)
 
 VXXFLAG = --cc -D__SIM_IP__ --Mdir $(VXX_MDIR) $(VXX_WNO) -LDFLAGS "-lpthread" --relative-includes $(VINCLUDE) -CFLAGS "$(CFLAGS)" -j $(NPROC)

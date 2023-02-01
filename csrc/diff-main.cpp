@@ -49,7 +49,7 @@ int main (int argc, char *argv[]) {
     AddrIntv confreg_range = AddrIntv(0x1faf0000,(uint8_t)16);
 
     unique_ptr<Pmem> v_inst_mem (new Pmem(inst_range));
-    v_inst_mem->load_binary(0,  "../nscscc-group/func_test_v0.01/soft/func/obj/main.bin");
+    v_inst_mem->load_binary(0,__FUNC_BIN__);
     axi->paddr_top.add_dev(inst_range, v_inst_mem.get());
 
     unique_ptr<PaddrConfreg> v_confreg (new PaddrConfreg(false));
@@ -67,7 +67,7 @@ int main (int argc, char *argv[]) {
     bool stop = false;
     v_confreg->set_switch(0);
     top->aresetn = 0;
-    IFDEF(CONFIG_TRACE_ON,tfp.open("func_test." CONFIG_WAVE_EXT));
+    IFDEF(CONFIG_TRACE_ON,tfp.open(__WAVE_DIR__ "func_test." CONFIG_WAVE_EXT));
     uint64_t rst_ticks = 5;
     uint64_t last_commit = ticks;
     uint64_t commit_timeout = 1024;

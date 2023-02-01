@@ -28,4 +28,8 @@ extern sim_status_t sim_status;
 #define __ASSERT_SIM__(cond,fmt,...) if (!(cond)) {\
     Log(fmt, ## __VA_ARGS__);\
     sim_status = SIM_ABORT;}
+
+#define __FUNC_BIN__ NSCSCC_HOME "/func_test_v0.01/soft/func/obj/main.bin"
+#define __WAVE_DIR__ DIFF_HOME "/vlogs/wave/"
+
 #endif
