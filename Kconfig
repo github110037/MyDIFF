@@ -1,8 +1,5 @@
 mainmenu "HIT DIFFTEST CONFIG"
 
-config TRACE_ON
-bool "log wave as vcd"
-default y
 
 menu "Build Options"# {{{
 choice
@@ -87,3 +84,26 @@ range PERF_START 10
 default 1
 
 endmenu# }}}
+
+menu "Wave Options"# {{{
+config TRACE_ON
+bool "log wave by file"
+default y
+
+choice
+  prompt "Wave file extension"
+  depends on TRACE_ON
+  default EXT_FST
+config EXT_VCD
+  bool "vcd"
+config EXT_FST
+  bool "fst"
+endchoice
+
+endmenu# }}}
+
+config WAVE_EXT
+  string
+  default "vcd" if EXT_VCD
+  default "fst" if EXT_FST
+  default "none"

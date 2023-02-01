@@ -20,7 +20,7 @@
 
 #define __OPEN_PM__ (
 #define __CLOSE_PM__ )
-#define __COMMA__ ,
+#define __comm__ ,
 
 // macro stringizing
 #define str_temp(x) #x

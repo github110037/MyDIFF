@@ -1,5 +1,10 @@
 obj_dir
+build
 .vscode
 *.vcd
 *.fst
-*.gtkw
+.config
+.config.old
+.nvim
+include/config
+include/generated
