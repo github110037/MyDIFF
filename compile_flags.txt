@@ -1,4 +1,3 @@
--std=gnu++14
 -I/usr/local/share/verilator/include
 -I/usr/local/share/verilator/include/vltstd 
 -I./include/
@@ -9,3 +8,5 @@
 -DVM_TRACE_FST=0 
 -faligned-new 
 -fcf-protection=none 
+-DNSCSCC_HOME="/home/hgh/code/nscscc-group"
+-DDIFF_HOME="/home/hgh/code/nscscc-group"

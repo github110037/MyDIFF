@@ -29,7 +29,8 @@ CFLAGS += -DNSCSCC_HOME=\\\"$(NSCSCC_HOME)\\\"
 CFLAGS += -DDIFF_HOME=\\\"$(DIFF_HOME)\\\"
 NPROC = $(shell nproc)
 
-VXXFLAG = --cc -D__SIM_IP__ --Mdir $(VXX_MDIR) $(VXX_WNO) -LDFLAGS "-lpthread" --relative-includes $(VINCLUDE) -CFLAGS "$(CFLAGS)" -j $(NPROC)
+VXXFLAG = --cc -D__SIM_IP__ --Mdir $(VXX_MDIR) $(VXX_WNO) -LDFLAGS "$(LDFLAGS)" --relative-includes $(VINCLUDE) -CFLAGS "$(CFLAGS)" 
+VXXFLAG += -j $(NPROC)
 ifdef CONFIG_TRACE_ON
 	VXXFLAG += --trace$(if $(CONFIG_EXT_FST),-fst)
 endif
@@ -55,7 +56,7 @@ sim: $(VXXBIN)
 	$(VXX_MDIR)/V$(TOPNAME)
 
 wave:
-	gtkwave ./*.vcd signals.sav -S marker.tcl
+	gtkwave vlogs/wave/*.fst vlogs/wave/signals.sav
 
 clean:
 ifndef VSRC_DIR

@@ -4,22 +4,22 @@
 #include <stdint.h>
 #include <string>
 #include "Vmycpu_top__Dpi.h"
-#include "difftest.hh"
+#include "difftest-dut.hh"
 #include "dpic.hh"
-void vtop_getState(CPU_state *mycpu){
+void dut_get_status(CPU_state *mycpu){
     for (uint8_t i = 0; i < 32; i++) {
         mycpu->gpr[i] = dpi_regfile(i);
     }
     mycpu->pc = dpi_retirePC();
 }
-bool check_state(CPU_state *cpu, CPU_state *ref_r){
+bool difftest_check(CPU_state *cpu, CPU_state *ref_r){
     bool ans = ref_r->pc==cpu->pc;
     for (uint8_t i = 0; i < 32; i++) {
         ans &= (ref_r->gpr[i]==cpu->gpr[i]);
     }
     return ans;
 }
-void print_diff(CPU_state *cpu, CPU_state *ref_r){
+void difftest_show_error(CPU_state *cpu, CPU_state *ref_r){
 #define FMT_REG  "%-8s" FMT_WORD "%20d\n"
     Log("Difftest FAIL for " ANSI_FMT("reference",ANSI_FG_GREEN) " is different from " ANSI_FMT("nemu",ANSI_FG_RED));
     for (size_t i = 0; i < ARRLEN(ref_r->gpr); i++) {

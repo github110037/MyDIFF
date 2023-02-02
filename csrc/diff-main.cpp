@@ -1,11 +1,12 @@
 #include "common.hh"
-#include "macro.hh"
 #include "verilated.h"
 #include "axi.hh"
 #include "Vmycpu_top.h"
 #include <csignal>
 #include <cstdio>
 #include "dpic.hh"
+#include "difftest-dut.hh"
+#include "difftest-ref.hh"
 #ifdef CONFIG_TRACE_ON
 #include __WAVE_INC__
 #endif
@@ -29,11 +30,11 @@ void compare (debug_info_t debug){
         inst_count++;
         if ((debug.pc != ref.pc) || (debug.wnum != ref.wnum) || (debug.wdata != ref.wdata)) {
             __ASSERT_SIM__(((debug.pc == ref.pc) && (debug.wnum == ref.wnum) && (debug.wdata == ref.wdata)), \
-                        "Error!!!\n"  \
-            "    mycpu    : PC = 0x%8x, wb_wnum = 0x%2x, wb_wdata = 0x%8x\n"  \
-            "    reference: PC = 0x%8x, wb_wnum = 0x%2x, wb_wdata = 0x%8x\n", \
-            debug.pc, debug.wnum, debug.wdata, ref.pc, ref.wnum, ref.wdata
-            );
+                    "Error!!!\n"  \
+                    "    mycpu    : PC = 0x%8x, wb_wnum = 0x%2x, wb_wdata = 0x%8x\n"  \
+                    "    reference: PC = 0x%8x, wb_wnum = 0x%2x, wb_wdata = 0x%8x\n", \
+                    debug.pc, debug.wnum, debug.wdata, ref.pc, ref.wnum, ref.wdata
+                    );
         }
     }
 }
@@ -51,14 +52,17 @@ int main (int argc, char *argv[]) {
     unique_ptr<Pmem> v_inst_mem (new Pmem(inst_range));
     v_inst_mem->load_binary(0,__FUNC_BIN__);
     axi->paddr_top.add_dev(inst_range, v_inst_mem.get());
-
     unique_ptr<PaddrConfreg> v_confreg (new PaddrConfreg(false));
     axi->paddr_top.add_dev(confreg_range, v_confreg.get());
 
-    golden_trace = fopen("../nscscc-group/func_test_v0.01/cpu132_gettrace/golden_trace.txt","r+");
-    if (golden_trace==nullptr){
-        Log("can not open golden_trace");
-    }
+    PaddrTop *nemu_paddr_top = new PaddrTop();
+    unique_ptr<Pmem> nemu_inst_mem (new Pmem(inst_range));
+    v_inst_mem->load_binary(0,__FUNC_BIN__);
+    nemu_paddr_top->add_dev(inst_range, nemu_inst_mem.get());
+    unique_ptr<PaddrConfreg> nemu_confreg (new PaddrConfreg(false));
+    nemu_paddr_top->add_dev(confreg_range, nemu_confreg.get());
+
+    ref_init((void*)nemu_paddr_top);
 
     wave_file_t tfp;
     IFDEF(CONFIG_TRACE_ON,top->trace(&tfp,0));
@@ -84,28 +88,33 @@ int main (int argc, char *argv[]) {
         top->aclk = !top->aclk;
         bool valid_posedge = top->aclk && top->aresetn;
         if (valid_posedge) {
-            stop = sim_status!=SIM_RUN;
             axi->calculate_output();
             top->eval();
             v_confreg->tick();
             axi->update_output();
-            debug_info_t debug0, debug1;
-            dpi_get_debug_info0(debug0);
-            dpi_get_debug_info1(debug1);
-            compare(debug0);
-            compare(debug1);
-            int c_num = dpi_retire();
-            // if (c_num>0){
-            //     last_commit_time = ticks;
-            // }
-            // if (ticks - last_commit_time > commit_timeout){
-            //     assert(0);
-            // }
+            IFDEF(CONFIG_TRACE_ON,tfp.dump(ticks));
+            stop = sim_status!=SIM_RUN;
+            if (sim_status!=SIM_RUN) break;
+            ref_tick_int(0);
+            uint8_t commit_num =dpi_retire();
+            if (commit_num>0){
+                for (size_t i = 0; i < commit_num; i++) {
+                    ref_exec_once(false);
+                }
+                CPU_state mycpu, ref_r;
+                dut_get_status(&mycpu);
+                ref_get_status(&ref_r);
+                bool res = difftest_check(&mycpu, &ref_r);
+                if (!res){
+                    __ASSERT_SIM__(0, "DIFFTEST ERROR!")
+                        difftest_show_error(&mycpu, &ref_r);
+                }
+            }
         }
         else {
             top->eval();
+            IFDEF(CONFIG_TRACE_ON,tfp.dump(ticks));
         }
-        IFDEF(CONFIG_TRACE_ON,tfp.dump(ticks));
         ticks ++;
     }
     fclose(golden_trace);

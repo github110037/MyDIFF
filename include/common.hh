@@ -1,7 +1,7 @@
 #ifndef __COMMON_HH__
 #define __COMMON_HH__
-#include "macro.hh"
 #include <stdint.h>
+#include "macro.hh"
 #include <cinttypes>
 typedef MUXDEF(CONFIG_ISA64, uint64_t, uint32_t) word_t;
 typedef MUXDEF(CONFIG_ISA64, int64_t, int32_t)  sword_t;

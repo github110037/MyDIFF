@@ -1,12 +1,13 @@
-#ifndef __MMIO_DEV__
-#define __MMIO_DEV__
-#include <stdint.h>
+#ifndef __PADDR_IF_HH__
+#define __PADDR_IF_HH__
+#include <cstdint>
 #include <cassert>
 #include <vector>
 #include <queue>
 #include "common.hh"
 #include "utils.hh"
-#include <stdio.h>
+#include <cstdio>
+#include "size_wstrb.hh"
 // address interval
 class AddrIntv {
     public:
@@ -23,10 +24,7 @@ class AddrIntv {
         return start + mask;
     }
 };
-typedef struct{
-    uint8_t size: 4;
-    uint8_t wstrb:4;
-} size_wstrb;
+
 class PaddrInterface {
     public:
         virtual bool do_read (word_t addr, size_wstrb info, word_t* data) = 0;
