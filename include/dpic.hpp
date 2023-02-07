@@ -1,7 +1,6 @@
 #ifndef __DPIC_HPP__
 #define __DPIC_HPP__
-#include <stdint.h>
-#include "v_debug.hh"
+#include "diff_struct.h"
 uint32_t dpi_regfile(uint8_t num);
 uint8_t dpi_retire();
 uint32_t dpi_retirePC();

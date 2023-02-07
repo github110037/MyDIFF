@@ -1,4 +1,28 @@
-#include "PaddrInterface.hh"
+#include "diff_sim.hpp"
+#include "PaddrInterface.hpp"
+
+#define CR0_ADDR            0x8000  //32'hbfaf_8000 
+#define CR1_ADDR            0x8004  //32'hbfaf_8004 
+#define CR2_ADDR            0x8008  //32'hbfaf_8008 
+#define CR3_ADDR            0x800c  //32'hbfaf_800c 
+#define CR4_ADDR            0x8010  //32'hbfaf_8010 
+#define CR5_ADDR            0x8014  //32'hbfaf_8014 
+#define CR6_ADDR            0x8018  //32'hbfaf_8018 
+#define CR7_ADDR            0x801c  //32'hbfaf_801c 
+#define LED_ADDR            0xf000  //32'hbfaf_f000 
+#define LED_RG0_ADDR        0xf004  //32'hbfaf_f004 
+#define LED_RG1_ADDR        0xf008  //32'hbfaf_f008 
+#define NUM_ADDR            0xf010  //32'hbfaf_f010 
+#define SWITCH_ADDR         0xf020  //32'hbfaf_f020 
+#define BTN_KEY_ADDR        0xf024  //32'hbfaf_f024
+#define BTN_STEP_ADDR       0xf028  //32'hbfaf_f028
+#define SW_INTER_ADDR       0xf02c  //32'hbfaf_f02c 
+#define TIMER_ADDR          0xe000  //32'hbfaf_e000 
+#define IO_SIMU_ADDR        0xffec  //32'hbfaf_ffec
+#define VIRTUAL_UART_ADDR   0xfff0  //32'hbfaf_fff0
+#define SIMU_FLAG_ADDR      0xfff4  //32'hbfaf_fff4 
+#define OPEN_TRACE_ADDR     0xfff8  //32'hbfaf_fff8
+#define NUM_MONITOR_ADDR    0xfffc  //32'hbfaf_fffc
 PaddrConfreg::PaddrConfreg(bool simulation) {
     timer = 0;
     memset(cr,0,sizeof(cr));
@@ -13,10 +37,8 @@ PaddrConfreg::PaddrConfreg(bool simulation) {
     virtual_uart = 0;
     set_switch(0);
 }
-void PaddrConfreg::tick() {
-    timer ++;
-}
-bool PaddrConfreg::do_read (word_t addr, size_wstrb info, word_t* data) {
+void PaddrConfreg::tick() { timer ++; }
+bool PaddrConfreg::do_read (word_t addr, wen_t info, word_t* data) {
     confreg_read ++;
     assert(info.size == 4);
     switch (addr) {
@@ -93,7 +115,7 @@ bool PaddrConfreg::do_read (word_t addr, size_wstrb info, word_t* data) {
     }
     return true;
 }
-bool PaddrConfreg::do_write(word_t addr, size_wstrb info, const word_t data){
+bool PaddrConfreg::do_write(word_t addr, wen_t info, const word_t data){
     confreg_write ++;
     assert(info.size == 4 || (info.size == 1 && addr == VIRTUAL_UART_ADDR));
     switch (addr) {
@@ -155,16 +177,11 @@ void PaddrConfreg::set_switch(uint8_t value) {
         }
     }
 }
-bool PaddrConfreg::has_uart() {
-    return !uart_queue.empty();
-}
+bool PaddrConfreg::has_uart() { return !uart_queue.empty(); }
 char PaddrConfreg::get_uart() {
     char res = uart_queue.front();
     uart_queue.pop();
     return res;
 }
-uint32_t PaddrConfreg::get_num() {
-    return num;
-}
-
-
+uint32_t PaddrConfreg::get_num() { return num; }
+PaddrInterface* PaddrConfreg::deep_copy(){ return new PaddrConfreg(*this); }

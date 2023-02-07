@@ -1,8 +1,9 @@
-#include "PaddrInterface.hh"
+#include "diff_sim.hpp"
+#include "PaddrInterface.hpp"
+#include "debug.h"
+#include <utility>
 
-PaddrTop::PaddrTop(){
-    devices.clear();
-};
+PaddrTop::PaddrTop(){ devices.clear(); };
 
 bool PaddrTop::add_dev(AddrIntv &new_range, PaddrInterface *dev) {
     // check overlap
@@ -15,8 +16,7 @@ bool PaddrTop::add_dev(AddrIntv &new_range, PaddrInterface *dev) {
     devices.push_back(std::make_pair(new_range, dev));
     return true;
 }
-
-bool PaddrTop::do_read (word_t addr, size_wstrb info, word_t* data){
+bool PaddrTop::do_read (word_t addr, wen_t info, word_t* data){
     for (auto it: devices){
         AddrIntv dev_range = it.first;
         if (dev_range.start<=addr && addr+info.size<=dev_range.end()){
@@ -25,7 +25,7 @@ bool PaddrTop::do_read (word_t addr, size_wstrb info, word_t* data){
     }
     return false;
 }
-bool PaddrTop::do_write(word_t addr, size_wstrb info, const word_t data){
+bool PaddrTop::do_write(word_t addr, wen_t info, const word_t data){
     for (auto it: devices){
         AddrIntv dev_range = it.first;
         if (dev_range.start<=addr && addr+info.size<=dev_range.end()){
@@ -34,3 +34,10 @@ bool PaddrTop::do_write(word_t addr, size_wstrb info, const word_t data){
     }
     return false;
 }
+PaddrTop::PaddrTop(PaddrTop &src){
+    for (auto element: src.devices) {
+        PaddrInterface* new_dev = element.second->deep_copy();
+        devices.push_back(std::make_pair(element.first, new_dev));
+    }
+}
+PaddrInterface* PaddrTop::deep_copy(){ return new PaddrTop(*this); }

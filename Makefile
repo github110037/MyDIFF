@@ -24,27 +24,34 @@ VXX_WNO = -Wno-caseincomplete \
 		  -Wno-pinmissing \
 		  -Wno-implicit \
 		  -Wno-timescalemod
-CFLAGS = -I$(DIFF_HOME)/include -g
+CFLAGS = -I$(DIFF_HOME)/include
+CFLAGS += -I$(NEMU_HOME)/include
 CFLAGS += -DNSCSCC_HOME=\\\"$(NSCSCC_HOME)\\\"
 CFLAGS += -DDIFF_HOME=\\\"$(DIFF_HOME)\\\"
+CFLAGS += -D__DIFF_PROJ__=1
+CFLAGS += -g
 NPROC = $(shell nproc)
 
-VXXFLAG = --cc -D__SIM_IP__ --Mdir $(VXX_MDIR) $(VXX_WNO) -LDFLAGS "$(LDFLAGS)" --relative-includes $(VINCLUDE) -CFLAGS "$(CFLAGS)" 
+VXXFLAG = --cc -D__SIM_IP__ --Mdir $(VXX_MDIR) $(VXX_WNO) --relative-includes $(VINCLUDE) -CFLAGS "$(CFLAGS)" 
 VXXFLAG += -j $(NPROC)
 ifdef CONFIG_TRACE_ON
 	VXXFLAG += --trace$(if $(CONFIG_EXT_FST),-fst)
 endif
 
-VXXBIN = V$(TOPNAME)
+VXXBIN = $(VXX_MDIR)/V$(TOPNAME)
 VSRC_TOP = $(VSRC_DIR)/$(TOPNAME).v
 VSRC_ALL = $(shell find $(VSRC_DIR) -type f -name "*.v")
 CSRC = $(shell find $(CSRC_DIR) -type f -name "*.cpp")
 
 .PHONY: clean head sim wave var
 
-var:
 
-include $(DIFF_HOME)/scripts/config.mk
+Kconfig := $(DIFF_HOME)/Kconfig
+include $(NEMU_HOME)/scripts/config.mk
+
+ARGS := -l $(VLOG_DIR)/log.txt -d $(NEMU_HOME)/build/mips32-nemu-interpreter-so
+
+var:
 
 head: $(VSRC_ALL)
 	verilator $(VXXFLAG) $(VSRC_TOP) 
@@ -53,7 +60,10 @@ $(VXXBIN): $(VSRC_ALL) $(CSRC)
 	verilator $(VXXFLAG) --exe $(VSRC_TOP) $(CSRC) --build
  
 sim: $(VXXBIN)
-	$(VXX_MDIR)/V$(TOPNAME)
+	$(VXXBIN) $(ARGS)
+
+gdb: $(VXXBIN)
+	gdb -s $(VXXBIN) --args $(VXXBIN) $(ARGS)
 
 wave:
 	gtkwave vlogs/wave/*.fst vlogs/wave/signals.sav

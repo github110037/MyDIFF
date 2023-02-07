@@ -1,7 +1,7 @@
 #include "svdpi.h"
 #include <cstdint>
 #include "Vmycpu_top__Dpi.h"
-#include "dpic.hh"
+#include "dpic.hpp"
 uint32_t dpi_regfile(uint8_t num){
     const svScope scope = svGetScopeFromName("TOP.mycpu_top.u_Main.u_ID.RegFile_u"); 
     svSetScope(scope);

@@ -1,12 +1,15 @@
-#include "common.hh"
-#include "verilated.h"
-#include "axi.hh"
-#include "Vmycpu_top.h"
 #include <csignal>
-#include <cstdio>
-#include "dpic.hh"
-#include "difftest-dut.hh"
-#include "difftest-ref.hh"
+#include "common.h"
+#include "diff_sim.hpp"
+#include "diff_func.hpp"
+#include "verilated.h"
+#include "axi.hpp"
+#include "Vmycpu_top.h"
+#include "dpic.hpp"
+#include <getopt.h>
+
+#define wave_file_t MUXDEF(CONFIG_EXT_FST,VerilatedFstC,VerilatedVcdC)
+#define __WAVE_INC__ MUXDEF(CONFIG_EXT_FST,"verilated_fst_c.h","verilated_vcd_c.h")
 #ifdef CONFIG_TRACE_ON
 #include __WAVE_INC__
 #endif
@@ -38,7 +41,36 @@ void compare (debug_info_t debug){
         }
     }
 }
+
+static char *log_file = NULL;
+static char *diff_so = NULL;
+const struct option table[] = {
+    {"log"      , required_argument, NULL, 'l'},
+    {"diff"     , required_argument, NULL, 'd'},
+    {"help"     , no_argument      , NULL, 'h'},
+    {0          , 0                , NULL,  0 },
+};
 int main (int argc, char *argv[]) {
+    int o;
+    while ( (o = getopt_long(argc, argv, "-hl:d:", table, NULL)) != -1) {
+        switch (o) {
+            case 'l': log_file = optarg; break;
+            case 'd': diff_so = optarg; break;
+            default:
+                      printf("Usage: %s [OPTION...] IMAGE [args]\n\n", argv[0]);
+                      printf("\t-l,--log=FILE           output log to FILE\n");
+                      printf("\t-d,--diff=FILE          dynamic shared so FILE\n");
+                      printf("\n");
+                      exit(0);
+        }
+    }
+
+    extern void init_log(const char* filename);
+    init_log(log_file);
+    
+
+    difftest_init(diff_so);
+
     Verilated::commandArgs(argc, argv);
     std::signal(SIGINT, [](int) {sim_status = SIM_ABORT;});
     Verilated::traceEverOn(CONFIG_TRACE_ON);
@@ -49,20 +81,14 @@ int main (int argc, char *argv[]) {
     AddrIntv inst_range = AddrIntv(0x1fc00000,(uint8_t)22);
     AddrIntv confreg_range = AddrIntv(0x1faf0000,(uint8_t)16);
 
-    unique_ptr<Pmem> v_inst_mem (new Pmem(inst_range));
+    Pmem* v_inst_mem = new Pmem(inst_range);
     v_inst_mem->load_binary(0,__FUNC_BIN__);
-    axi->paddr_top.add_dev(inst_range, v_inst_mem.get());
-    unique_ptr<PaddrConfreg> v_confreg (new PaddrConfreg(false));
-    axi->paddr_top.add_dev(confreg_range, v_confreg.get());
+    PaddrConfreg* v_confreg = new PaddrConfreg(false);
+    axi->paddr_top.add_dev(inst_range, v_inst_mem);
+    axi->paddr_top.add_dev(confreg_range, v_confreg);
 
-    PaddrTop *nemu_paddr_top = new PaddrTop();
-    unique_ptr<Pmem> nemu_inst_mem (new Pmem(inst_range));
-    v_inst_mem->load_binary(0,__FUNC_BIN__);
-    nemu_paddr_top->add_dev(inst_range, nemu_inst_mem.get());
-    unique_ptr<PaddrConfreg> nemu_confreg (new PaddrConfreg(false));
-    nemu_paddr_top->add_dev(confreg_range, nemu_confreg.get());
-
-    ref_init((void*)nemu_paddr_top);
+    PaddrTop *nemu_paddr_top = new PaddrTop(axi->paddr_top);
+    ref_init((void*)nemu_paddr_top,log_file);
 
     wave_file_t tfp;
     IFDEF(CONFIG_TRACE_ON,top->trace(&tfp,0));
@@ -101,13 +127,13 @@ int main (int argc, char *argv[]) {
                 for (size_t i = 0; i < commit_num; i++) {
                     ref_exec_once(false);
                 }
-                CPU_state mycpu, ref_r;
-                dut_get_status(&mycpu);
-                ref_get_status(&ref_r);
+                diff_state mycpu, ref_r;
+                dut_get_state(&mycpu);
+                ref_get_state(&ref_r);
                 bool res = difftest_check(&mycpu, &ref_r);
                 if (!res){
-                    __ASSERT_SIM__(0, "DIFFTEST ERROR!")
-                        difftest_show_error(&mycpu, &ref_r);
+                    __ASSERT_SIM__(0, "DIFFTEST ERROR!");
+                    difftest_show_error(&mycpu, &ref_r);
                 }
             }
         }
@@ -117,7 +143,7 @@ int main (int argc, char *argv[]) {
         }
         ticks ++;
     }
-    fclose(golden_trace);
+    // fclose(golden_trace);
     IFDEF(CONFIG_TRACE_ON,tfp.close());
     top->final();
     printf("total ticks = %lu\n", ticks);

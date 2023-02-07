@@ -2,10 +2,10 @@
 #define __AXI_HH__
 
 #include "Vmycpu_top.h"
-#include "macro.hh"
+#include "common.h"
 #include "generated/autoconf.h"
 #include <memory>
-#include "PaddrInterface.hh"
+#include "PaddrInterface.hpp"
 
 typedef enum {/*{{{*/
     BURST_FIXED = 0,
@@ -108,7 +108,7 @@ class axi_paddr{
         burst_t r_burst_type;
 
         word_t r_cur_addr;
-        size_wstrb r_cur_info;
+        wen_t r_cur_info;
         uint8_t r_cur_id;
 
         bool accept_read_req();
@@ -124,7 +124,7 @@ class axi_paddr{
         burst_t w_burst_type;
 
         word_t w_cur_addr[16];
-        size_wstrb w_cur_info[16];
+        wen_t w_cur_info[16];
         uint8_t w_cur_id;
         word_t w_cur_data[16];
         uint8_t w_cur_NO;

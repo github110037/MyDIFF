@@ -1,7 +1,8 @@
 -I/usr/local/share/verilator/include
 -I/usr/local/share/verilator/include/vltstd 
--I./include/
--I./obj_dir/
+-I./include
+-I/home/hgh/ysyx-workbench/nemu/include
+-I./obj_dir
 -DVM_COVERAGE=0 
 -DVM_SC=0 
 -DVM_TRACE=1 
@@ -10,3 +11,5 @@
 -fcf-protection=none 
 -DNSCSCC_HOME="/home/hgh/code/nscscc-group"
 -DDIFF_HOME="/home/hgh/code/nscscc-group"
+-D__DIFF_PROJ__=1
+-std=gnu++11
