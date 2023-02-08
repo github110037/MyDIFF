@@ -3,10 +3,12 @@
 #include "diff_sim.hpp"
 #include "diff_func.hpp"
 #include "verilated.h"
+#include "diff_proj/diff_log.h"
 #include "axi.hpp"
 #include "Vmycpu_top.h"
 #include "dpic.hpp"
 #include <getopt.h>
+#include "diff_proj/diff_log.h"
 
 #define wave_file_t MUXDEF(CONFIG_EXT_FST,VerilatedFstC,VerilatedVcdC)
 #define __WAVE_INC__ MUXDEF(CONFIG_EXT_FST,"verilated_fst_c.h","verilated_vcd_c.h")
@@ -44,7 +46,6 @@ void compare (debug_info_t debug){
 
 static char *log_file = nullptr;
 static char *diff_so = nullptr;
-FILE * log_dt = nullptr;
 static int parse_args(int argc, char *argv[]) {
     const struct option table[] = {
         {"log"     , required_argument, NULL, 'l'},
@@ -67,15 +68,12 @@ static int parse_args(int argc, char *argv[]) {
     }
     return 0;
 }
-static void log_init(const char* filename){
-    log_dt = (filename != nullptr) ? fopen(filename, "w") :stdout;
-    Log("DiffTest Log is written to %s", log_dt ? filename : "stdout");
-}
 
 int main (int argc, char *argv[]) {
 
     parse_args(argc, argv);
 
+    extern void log_init(const char* filename);
     log_init(log_file);
 
     difftest_init(diff_so);
@@ -97,7 +95,7 @@ int main (int argc, char *argv[]) {
     axi->paddr_top.add_dev(confreg_range, v_confreg);
 
     PaddrTop *nemu_paddr_top = new PaddrTop(axi->paddr_top);
-    ref_init((void*)nemu_paddr_top,log_dt);
+    ref_init((void*)nemu_paddr_top);
 
     Verilated::traceEverOn(CONFIG_TRACE_ON);
     IFDEF(CONFIG_TRACE_ON,wave_file_t tfp);

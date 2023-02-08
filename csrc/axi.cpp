@@ -1,4 +1,5 @@
 #include "diff_sim.hpp"
+#include "diff_proj/diff_log.h"
 #include "axi.hpp"
 bool axi_paddr::calculate_output(){
     bool res = read_eval();

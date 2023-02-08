@@ -23,19 +23,10 @@ typedef enum{
         if (!(cond)) { \
             fflush(stdout);\
             fprintf(stderr, ANSI_FMT(format, ANSI_FG_RED) "\n", ##  __VA_ARGS__);\
-            extern FILE* log_dt;\
-            fflush(log_dt);\
             assert(cond);\
         } \
     } while (0)
-
-#define log_write(...) \
-    do { \
-        extern FILE* log_dt; \
-        fprintf(log_dt, __VA_ARGS__); \
-        fflush(log_dt); \
-    } while (0)
-#endif
+#endif // __DIFF_PROJ__
 
 extern sim_status_t sim_status;
 #define __FUNC_BIN__ NSCSCC_HOME "/func_test_v0.01/soft/func/obj/main.bin"

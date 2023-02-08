@@ -4,6 +4,7 @@
 #include "diff_func.hpp"
 #include "diff_struct.h"
 #include "dpic.hpp"
+#include <diff_proj/diff_log.h>
 #include "diff_sim.hpp"
 #include <dlfcn.h>
 

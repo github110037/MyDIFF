@@ -123,6 +123,10 @@ config LRING_NR
     int "Save the last n log"
     default 1024
 
+config LRING_LEN 
+    depends on LRING_ENABLE
+    int "Log max length per line"
+    default 128
 
 endmenu
 
