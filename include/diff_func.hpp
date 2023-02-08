@@ -15,7 +15,8 @@ void dut_get_state(diff_state *mycpu);
 extern "C" {
 #endif
 
-typedef void (*REF_INIT)(void* paddr_top, const char* filename);
+#include <cstdio>
+typedef void (*REF_INIT)(void* paddr_top, FILE * filename);
 typedef void (*REF_TICK_INT)(uint8_t ext_int);
 typedef void (*REF_HILO_SET)(word_t hi, word_t lo);
 typedef bool (*REF_EXEC_ONCE)(bool except);

@@ -40,9 +40,7 @@ void difftest_init(const char* ref_so_file){
     Assert(ref_get_debug_info, "Can not find ref_get_debug_info");  
 
     Log("Differential testing: %s", ANSI_FMT("ON", ANSI_FG_GREEN));
-    Log("The result of every instruction will be compared with %s. "
-            "This will help you a lot for debugging, but also significantly reduce the performance. "
-            "If it is not necessary, you can turn it off in menuconfig.", ref_so_file);
+    Log("The result of every instruction will be compared with %s.", ref_so_file);
 }
 
 bool difftest_check(diff_state *cpu, diff_state *ref_r){

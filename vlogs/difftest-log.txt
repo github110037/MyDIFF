@@ -1,0 +1,8 @@
+[1;36m[/home/hgh/code/chong/difftest/csrc/diff-main.cpp:72 log_init] DiffTest Log is written to /home/hgh/code/chong/difftest/vlogs/difftest-log.txt[0m
+[1;36m[/home/hgh/code/chong/difftest/csrc/difftest.cpp:42 difftest_init] Differential testing: [1;32mON[0m[0m
+[1;36m[/home/hgh/code/chong/difftest/csrc/difftest.cpp:43 difftest_init] The result of every instruction will be compared with /home/hgh/ysyx-workbench/nemu/build/mips32-nemu-interpreter-so.[0m
+Hello test[1;93m[/home/hgh/code/chong/difftest/csrc/device/PaddrConfreg.cpp:166 do_write] write confreg not exist address: 0x0000f008[0m
+[1;93m[/home/hgh/code/chong/difftest/csrc/device/PaddrConfreg.cpp:166 do_write] write confreg not exist address: 0x0000f008[0m
+[1;93m[/home/hgh/code/chong/difftest/csrc/device/PaddrConfreg.cpp:166 do_write] write confreg not exist address: 0x0000f004[0m
+[1;93m[/home/hgh/code/chong/difftest/csrc/device/PaddrConfreg.cpp:166 do_write] write confreg not exist address: 0x0000f004[0m
+[1;31m[$NEMU/src/cpu/cpu-exec.c:145 assert_fail_msg] Fail instruction is 0xbfc49610: ad 09 66 a8 sw	$9, 0x66a8($8) [0m

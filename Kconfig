@@ -102,6 +102,30 @@ endchoice
 
 endmenu# }}}
 
+menu "Log Options"
+
+config LOG_ENABLE
+    bool "Save difftest output in a file"
+    default y
+
+config LOG_FILE
+    depends on LOG_ENABLE
+    string "log file absolutely path"
+    default "$(DIFF_HOME)/vlogs/difftest-log.txt"
+
+config LRING_ENABLE
+    depends on LOG_ENABLE
+    bool "Only save the last n log in file"
+    default n
+
+config LRING_NR 
+    depends on LRING_ENABLE
+    int "Save the last n log"
+    default 1024
+
+
+endmenu
+
 config WAVE_EXT
   string
   default "vcd" if EXT_VCD

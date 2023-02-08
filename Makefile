@@ -30,6 +30,7 @@ CFLAGS += -DNSCSCC_HOME=\\\"$(NSCSCC_HOME)\\\"
 CFLAGS += -DDIFF_HOME=\\\"$(DIFF_HOME)\\\"
 CFLAGS += -D__DIFF_PROJ__=1
 CFLAGS += -g
+# CFLAGS += -D__FILENAME__=\\\"$(notdir $<)\\\"
 NPROC = $(shell nproc)
 
 VXXFLAG = --cc -D__SIM_IP__ --Mdir $(VXX_MDIR) $(VXX_WNO) --relative-includes $(VINCLUDE) -CFLAGS "$(CFLAGS)" 
@@ -49,7 +50,7 @@ CSRC = $(shell find $(CSRC_DIR) -type f -name "*.cpp")
 Kconfig := $(DIFF_HOME)/Kconfig
 include $(NEMU_HOME)/scripts/config.mk
 
-ARGS := -l $(VLOG_DIR)/log.txt -d $(NEMU_HOME)/build/mips32-nemu-interpreter-so
+ARGS := -l $(patsubst "%",%,$(CONFIG_LOG_FILE)) -d $(NEMU_HOME)/build/mips32-nemu-interpreter-so
 
 var:
 

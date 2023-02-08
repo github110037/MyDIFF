@@ -42,38 +42,45 @@ void compare (debug_info_t debug){
     }
 }
 
-static char *log_file = NULL;
-static char *diff_so = NULL;
-const struct option table[] = {
-    {"log"      , required_argument, NULL, 'l'},
-    {"diff"     , required_argument, NULL, 'd'},
-    {"help"     , no_argument      , NULL, 'h'},
-    {0          , 0                , NULL,  0 },
-};
-int main (int argc, char *argv[]) {
+static char *log_file = nullptr;
+static char *diff_so = nullptr;
+FILE * log_dt = nullptr;
+static int parse_args(int argc, char *argv[]) {
+    const struct option table[] = {
+        {"log"     , required_argument, NULL, 'l'},
+        {"diff"     , required_argument, NULL, 'd'},
+        {"help"     , no_argument      , NULL, 'h'},
+        {0          , 0                , NULL,  0 },
+    };
     int o;
-    while ( (o = getopt_long(argc, argv, "-hl:d:", table, NULL)) != -1) {
+    while ( (o = getopt_long(argc, argv, "-hl:n:d:", table, NULL)) != -1) {
         switch (o) {
             case 'l': log_file = optarg; break;
             case 'd': diff_so = optarg; break;
             default:
                       printf("Usage: %s [OPTION...] IMAGE [args]\n\n", argv[0]);
-                      printf("\t-l,--log=FILE           output log to FILE\n");
+                      printf("\t-l,--log=FILE           output difftest log to FILE\n");
                       printf("\t-d,--diff=FILE          dynamic shared so FILE\n");
                       printf("\n");
                       exit(0);
         }
     }
+    return 0;
+}
+static void log_init(const char* filename){
+    log_dt = (filename != nullptr) ? fopen(filename, "w") :stdout;
+    Log("DiffTest Log is written to %s", log_dt ? filename : "stdout");
+}
 
-    extern void init_log(const char* filename);
-    init_log(log_file);
-    
+int main (int argc, char *argv[]) {
+
+    parse_args(argc, argv);
+
+    log_init(log_file);
 
     difftest_init(diff_so);
 
-    Verilated::commandArgs(argc, argv);
     std::signal(SIGINT, [](int) {sim_status = SIM_ABORT;});
-    Verilated::traceEverOn(CONFIG_TRACE_ON);
 
     unique_ptr<Vmycpu_top> top(new Vmycpu_top());
     unique_ptr<axi_paddr> axi(new axi_paddr(top.get()));
@@ -84,34 +91,38 @@ int main (int argc, char *argv[]) {
     Pmem* v_inst_mem = new Pmem(inst_range);
     v_inst_mem->load_binary(0,__FUNC_BIN__);
     PaddrConfreg* v_confreg = new PaddrConfreg(false);
+    v_confreg->set_switch(0);
+
     axi->paddr_top.add_dev(inst_range, v_inst_mem);
     axi->paddr_top.add_dev(confreg_range, v_confreg);
 
     PaddrTop *nemu_paddr_top = new PaddrTop(axi->paddr_top);
-    ref_init((void*)nemu_paddr_top,log_file);
+    ref_init((void*)nemu_paddr_top,log_dt);
 
-    wave_file_t tfp;
+    Verilated::traceEverOn(CONFIG_TRACE_ON);
+    IFDEF(CONFIG_TRACE_ON,wave_file_t tfp);
     IFDEF(CONFIG_TRACE_ON,top->trace(&tfp,0));
-    uint64_t ticks = 0;
-
-    bool stop = false;
-    v_confreg->set_switch(0);
-    top->aresetn = 0;
     IFDEF(CONFIG_TRACE_ON,tfp.open(__WAVE_DIR__ "func_test." CONFIG_WAVE_EXT));
+
+    uint64_t ticks = 0;
     uint64_t rst_ticks = 5;
     uint64_t last_commit = ticks;
     uint64_t commit_timeout = 1024;
-    top->aclk = 0;
     sim_status = SIM_RUN;
-    uint64_t last_commit_time = ticks;
-    while (!Verilated::gotFinish() && !stop) {
+
+    top->aclk = 0;
+    top->aresetn = 0;
+
+    while (!Verilated::gotFinish()) {
         if (rst_ticks  > 0) {
             top->aresetn = 0;
             rst_ticks --;
             axi->reset();
         }
         else top->aresetn = 1;
+
         top->aclk = !top->aclk;
+
         bool valid_posedge = top->aclk && top->aresetn;
         if (valid_posedge) {
             axi->calculate_output();
@@ -119,7 +130,6 @@ int main (int argc, char *argv[]) {
             v_confreg->tick();
             axi->update_output();
             IFDEF(CONFIG_TRACE_ON,tfp.dump(ticks));
-            stop = sim_status!=SIM_RUN;
             if (sim_status!=SIM_RUN) break;
             ref_tick_int(0);
             uint8_t commit_num =dpi_retire();
@@ -143,7 +153,6 @@ int main (int argc, char *argv[]) {
         }
         ticks ++;
     }
-    // fclose(golden_trace);
     IFDEF(CONFIG_TRACE_ON,tfp.close());
     top->final();
     printf("total ticks = %lu\n", ticks);
